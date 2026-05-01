@@ -1,6 +1,9 @@
 import axios from "axios";
 
-const DEFAULT_API_BASE_URL = import.meta.env.DEV ? "/api" : "https://krishicre.onrender.com/api";
+const DEFAULT_API_BASE_URL = import.meta.env.DEV
+  ? "/api"
+  : "https://krishicre.onrender.com/api";
+
 const AUTH_CLEARED_EVENT = "krishi_auth_cleared";
 const AUTH_UPDATED_EVENT = "krishi_auth_updated";
 
@@ -18,11 +21,14 @@ const normalizeApiBaseUrl = (value) => {
   return `${trimmed}/api`;
 };
 
-export const API_BASE_URL = normalizeApiBaseUrl(import.meta.env.VITE_API_URL || DEFAULT_API_BASE_URL);
+export const API_BASE_URL = normalizeApiBaseUrl(
+  import.meta.env.VITE_API_URL || DEFAULT_API_BASE_URL
+);
 
 let refreshRequest = null;
 
-const getStoredRefreshToken = () => localStorage.getItem("krishi_refresh_token");
+const getStoredRefreshToken = () =>
+  localStorage.getItem("krishi_refresh_token");
 
 const clearStoredAuth = () => {
   localStorage.removeItem("krishi_token");
@@ -30,39 +36,65 @@ const clearStoredAuth = () => {
   localStorage.removeItem("krishi_user");
 };
 
-const dispatchAuthEvent = (name, detail) => {
+const dispatchAuthEvent = (name, detail = {}) => {
   if (typeof window !== "undefined") {
     window.dispatchEvent(new CustomEvent(name, { detail }));
   }
 };
 
 const isAuthEndpoint = (url = "") => {
-  return ["/auth/login", "/auth/logout", "/auth/refresh-token"].some((path) => String(url).includes(path));
+  return [
+    "/auth/login",
+    "/auth/logout",
+    "/auth/refresh-token"
+  ].some((path) => String(url).includes(path));
 };
 
 const refreshAccessToken = async () => {
   const refreshToken = getStoredRefreshToken();
+
   if (!refreshToken) {
     throw new Error("Missing refresh token");
   }
 
   if (!refreshRequest) {
     refreshRequest = axios
-      .post(`${API_BASE_URL}/auth/refresh-token`, { refreshToken })
+      .post(
+        `${API_BASE_URL}/auth/refresh-token`,
+        { refreshToken },
+        { withCredentials: true }
+      )
       .then((response) => {
         const data = response.data?.data || response.data || {};
         const token = data.token || data.accessToken;
 
         if (!token) {
-          throw new Error("Refresh response did not include an access token");
+          throw new Error(
+            "Refresh response did not include an access token"
+          );
         }
 
         localStorage.setItem("krishi_token", token);
-        if (data.user) {
-          localStorage.setItem("krishi_user", JSON.stringify(data.user));
+
+        if (data.refreshToken) {
+          localStorage.setItem(
+            "krishi_refresh_token",
+            data.refreshToken
+          );
         }
 
-        dispatchAuthEvent(AUTH_UPDATED_EVENT, { token, user: data.user });
+        if (data.user) {
+          localStorage.setItem(
+            "krishi_user",
+            JSON.stringify(data.user)
+          );
+        }
+
+        dispatchAuthEvent(AUTH_UPDATED_EVENT, {
+          token,
+          user: data.user
+        });
+
         return token;
       })
       .finally(() => {
@@ -75,11 +107,15 @@ const refreshAccessToken = async () => {
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  withCredentials: true
+  withCredentials: true,
+  headers: {
+    "Content-Type": "application/json"
+  }
 });
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("krishi_token");
+
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -115,10 +151,12 @@ api.interceptors.response.use(
 
       try {
         const token = await refreshAccessToken();
+
         originalRequest.headers = {
           ...(originalRequest.headers || {}),
           Authorization: `Bearer ${token}`
         };
+
         return api(originalRequest);
       } catch (refreshError) {
         clearStoredAuth();
