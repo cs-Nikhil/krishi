@@ -26,9 +26,24 @@ const app = express();
 
 app.use(helmet());
 app.use(compression());
+
+// CLIENT_ORIGIN supports comma-separated origins for multiple frontends
+// e.g. CLIENT_ORIGIN=https://keen-flan-464cd4.netlify.app,http://localhost:5173
+const allowedOrigins = (process.env.CLIENT_ORIGIN || "http://localhost:5173")
+  .split(",")
+  .map((o) => o.trim())
+  .filter(Boolean);
+
 app.use(
   cors({
-    origin: process.env.CLIENT_ORIGIN || "http://localhost:5173",
+    origin: (origin, callback) => {
+      // Allow requests with no origin (mobile apps, curl, Render health checks)
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error(`CORS: origin ${origin} not allowed`));
+      }
+    },
     credentials: true
   })
 );
