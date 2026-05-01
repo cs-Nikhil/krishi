@@ -35,8 +35,13 @@ app.use(
 app.use(express.json({ limit: "2mb" }));
 app.use(express.urlencoded({ extended: true, limit: "2mb" }));
 app.use(mongoSanitize({ replaceWith: "_" }));
-app.use(morgan("dev"));
+app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
 app.use(attachAuditLogger);
+
+// Root health check — required for Render and other hosting platforms
+app.get("/", (req, res) => {
+  res.send("Krishi Credit backend running");
+});
 
 app.get("/api/health", (req, res) => {
   sendSuccess(res, {

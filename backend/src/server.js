@@ -48,13 +48,12 @@ connectDB()
   .then((connection) => {
     console.log(`MongoDB connected: ${connection.host}`);
     startDueNotificationScheduler();
-    server.listen(port, () => {
-      console.log(`API server running on http://localhost:${port}`);
+    server.listen(port, "0.0.0.0", () => {
+      console.log(`API server running on port ${port}`);
     });
   })
   .catch((error) => {
-    console.error("MongoDB connection failed");
-    console.error(error.message);
+    console.error("MongoDB connection failed:", error.message);
     process.exit(1);
   });
 
