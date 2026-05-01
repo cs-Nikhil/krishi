@@ -29,10 +29,15 @@ app.use(compression());
 
 // CLIENT_ORIGIN supports comma-separated origins for multiple frontends
 // e.g. CLIENT_ORIGIN=https://keen-flan-464cd4.netlify.app,http://localhost:5173
-const allowedOrigins = (process.env.CLIENT_ORIGIN || "http://localhost:5173")
-  .split(",")
-  .map((o) => o.trim())
-  .filter(Boolean);
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://keen-flan-464cd4.netlify.app",
+  "https://krishicredit.netlify.app",
+  ...(process.env.CLIENT_ORIGIN || "")
+    .split(",")
+    .map((o) => o.trim())
+    .filter(Boolean)
+];
 
 app.use(
   cors({
@@ -44,7 +49,9 @@ app.use(
         callback(new Error(`CORS: origin ${origin} not allowed`));
       }
     },
-    credentials: true
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"]
   })
 );
 app.use(express.json({ limit: "2mb" }));
