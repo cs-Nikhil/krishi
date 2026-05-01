@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import api from "../api/client.js";
+import { useAuth } from "../context/AuthContext.jsx";
 import { formatCurrency, formatDate, getErrorMessage } from "../utils/format.js";
 
 const priorityTone = {
@@ -13,6 +14,7 @@ const priorityTone = {
 
 const NotificationBell = () => {
   const navigate = useNavigate();
+  const { token } = useAuth();
   const { t, i18n } = useTranslation();
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
@@ -32,10 +34,16 @@ const NotificationBell = () => {
   };
 
   useEffect(() => {
+    if (!token) {
+      setNotifications([]);
+      setUnreadCount(0);
+      return undefined;
+    }
+
     load();
     const interval = window.setInterval(load, 60000);
     return () => window.clearInterval(interval);
-  }, []);
+  }, [token]);
 
   const openNotification = async (notification) => {
     try {

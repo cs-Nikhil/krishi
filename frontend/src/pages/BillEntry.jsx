@@ -37,7 +37,13 @@ const BillEntry = () => {
 
     try {
       const body = new FormData();
-      Object.entries(form).forEach(([key, value]) => body.append(key, value));
+      Object.entries(form).forEach(([key, value]) => {
+        if (key === "billNumber" && !String(value).trim()) {
+          return;
+        }
+
+        body.append(key, value);
+      });
       if (billFile) body.append("billFile", billFile);
 
       const { data } = await api.post("/bills", body, {
@@ -159,7 +165,7 @@ const BillEntry = () => {
                 <input
                   id="billFile"
                   type="file"
-                  accept="image/png,image/jpeg,image/webp,application/pdf"
+                  accept="image/png,image/jpeg,application/pdf"
                   className="field"
                   onChange={(event) => setBillFile(event.target.files?.[0] || null)}
                 />

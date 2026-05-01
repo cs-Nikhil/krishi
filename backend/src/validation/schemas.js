@@ -3,6 +3,11 @@ const { z } = require("zod");
 const objectId = z.string().trim().regex(/^[0-9a-fA-F]{24}$/, "Invalid id");
 const optionalText = (max = 500) => z.string().trim().max(max).optional().default("");
 const optionalTrimmedText = (max = 500) => z.string().trim().max(max).optional();
+const optionalNonEmptyText = (max = 500) =>
+  z.preprocess(
+    (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
+    z.string().trim().min(1).max(max).optional()
+  );
 const optionalDate = z.coerce.date().optional();
 const paymentModeValue = z.enum(["cash", "online"]);
 const paymentMode = paymentModeValue.optional().default("cash");
@@ -74,7 +79,7 @@ const updateCustomerBody = z
 
 const createBillBody = z.object({
   customer: objectId,
-  billNumber: z.string().trim().min(1).max(80).optional(),
+  billNumber: optionalNonEmptyText(80),
   billAmount: z.coerce.number().min(0),
   paidAmount: z.coerce.number().min(0).optional().default(0),
   paymentMode,
@@ -84,7 +89,7 @@ const createBillBody = z.object({
 
 const updateBillBody = z
   .object({
-    billNumber: z.string().trim().min(1).max(80).optional(),
+    billNumber: optionalNonEmptyText(80),
     billAmount: z.coerce.number().min(0).optional(),
     paidAmount: z.coerce.number().min(0).optional(),
     paymentMode: paymentModeValue.optional(),

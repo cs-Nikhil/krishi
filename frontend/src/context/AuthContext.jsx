@@ -2,6 +2,8 @@ import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import api from "../api/client.js";
 
 const AuthContext = createContext(null);
+const AUTH_CLEARED_EVENT = "krishi_auth_cleared";
+const AUTH_UPDATED_EVENT = "krishi_auth_updated";
 
 export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(() => localStorage.getItem("krishi_token"));
@@ -10,6 +12,31 @@ export const AuthProvider = ({ children }) => {
     return stored ? JSON.parse(stored) : null;
   });
   const [loading, setLoading] = useState(Boolean(token));
+
+  useEffect(() => {
+    const clearAuthState = () => {
+      setToken(null);
+      setUser(null);
+      setLoading(false);
+    };
+
+    const updateAuthState = (event) => {
+      if (event.detail?.token) {
+        setToken(event.detail.token);
+      }
+      if (event.detail?.user) {
+        setUser(event.detail.user);
+      }
+    };
+
+    window.addEventListener(AUTH_CLEARED_EVENT, clearAuthState);
+    window.addEventListener(AUTH_UPDATED_EVENT, updateAuthState);
+
+    return () => {
+      window.removeEventListener(AUTH_CLEARED_EVENT, clearAuthState);
+      window.removeEventListener(AUTH_UPDATED_EVENT, updateAuthState);
+    };
+  }, []);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -26,6 +53,7 @@ export const AuthProvider = ({ children }) => {
         setToken(null);
         setUser(null);
         localStorage.removeItem("krishi_token");
+        localStorage.removeItem("krishi_refresh_token");
         localStorage.removeItem("krishi_user");
       } finally {
         setLoading(false);
