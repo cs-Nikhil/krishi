@@ -1,6 +1,22 @@
 import axios from "axios";
 
-export const API_BASE_URL = import.meta.env.VITE_API_URL || "https://krishicre.onrender.com/api";
+const DEFAULT_API_BASE_URL = import.meta.env.DEV ? "/api" : "https://krishicre.onrender.com/api";
+
+const normalizeApiBaseUrl = (value) => {
+  const trimmed = String(value || "").trim().replace(/\/+$/, "");
+
+  if (!trimmed) {
+    return DEFAULT_API_BASE_URL;
+  }
+
+  if (trimmed === "/api" || trimmed.endsWith("/api")) {
+    return trimmed;
+  }
+
+  return `${trimmed}/api`;
+};
+
+export const API_BASE_URL = normalizeApiBaseUrl(import.meta.env.VITE_API_URL || DEFAULT_API_BASE_URL);
 
 const api = axios.create({
   baseURL: API_BASE_URL

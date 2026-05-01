@@ -1,4 +1,6 @@
-require("dotenv").config();
+const path = require("path");
+
+require("dotenv").config({ path: path.resolve(__dirname, "../.env") });
 
 const cors = require("cors");
 const compression = require("compression");
@@ -23,6 +25,8 @@ const userRoutes = require("./routes/users.routes");
 const { sendSuccess } = require("./utils/apiResponse");
 
 const app = express();
+
+app.set("trust proxy", 1);
 
 app.use(helmet());
 app.use(compression());
@@ -60,7 +64,7 @@ app.use(mongoSanitize({ replaceWith: "_" }));
 app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
 app.use(attachAuditLogger);
 
-// Root health check — required for Render and other hosting platforms
+// Root health check - required for Render and other hosting platforms
 app.get("/", (req, res) => {
   res.send("Krishi Credit backend running");
 });
