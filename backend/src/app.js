@@ -31,33 +31,51 @@ app.set("trust proxy", 1);
 app.use(helmet());
 app.use(compression());
 
-// CLIENT_ORIGIN supports comma-separated origins for multiple frontends
-// e.g. CLIENT_ORIGIN=https://keen-flan-464cd4.netlify.app,http://localhost:5173
 const allowedOrigins = [
+  // local dev
   "http://localhost:5173",
+
+  // deployed origins (kept for compatibility with existing deployments)
   "https://keen-flan-464cd4.netlify.app",
   "https://krishicredit.netlify.app",
+
+  // preferred: CLIENT_ORIGINS (comma-separated)
+  ...(process.env.CLIENT_ORIGINS || "")
+    .split(",")
+    .map((o) => o.trim())
+    .filter(Boolean),
+
+  // fallback: CLIENT_ORIGIN (single/or comma-separated)
   ...(process.env.CLIENT_ORIGIN || "")
     .split(",")
     .map((o) => o.trim())
-    .filter(Boolean)
+    .filter(Boolean),
+
+  // optional single frontend url
+  ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL.trim()] : [])
 ];
 
 app.use(
   cors({
     origin: (origin, callback) => {
       // Allow requests with no origin (mobile apps, curl, Render health checks)
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error(`CORS: origin ${origin} not allowed`));
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
       }
+
+      return callback(new Error(`CORS: origin ${origin} not allowed`));
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"]
   })
 );
+
+// Explicit preflight handling
+app.options("*", cors());
+
 app.use(express.json({ limit: "2mb" }));
 app.use(express.urlencoded({ extended: true, limit: "2mb" }));
 app.use(mongoSanitize({ replaceWith: "_" }));
