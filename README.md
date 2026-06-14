@@ -160,11 +160,8 @@ JWT_REFRESH_EXPIRES_DAYS=30
 JWT_EXPIRES_IN=7d
 MAX_UPLOAD_MB=15
 
-# Seed script credentials (used by npm run seed)
-SEED_OWNER_NAME=Owner
-SEED_OWNER_EMAIL=owner@example.com
-SEED_OWNER_PASSWORD=owner12345
-```
+
+
 
 **MongoDB Atlas URI format:**
 ```env
